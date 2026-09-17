@@ -8,5 +8,9 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS usuarios (
                 senha TEXT NOT NULL
                 )""")
 
+cursor.execute("""INSERT INTO usuarios
+                (usuario, senha) VALUES (?, ?)""",
+                ("Ciclano", "ciclaninho"))
+
 conexao.commit()
 conexao.close()
