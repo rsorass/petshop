@@ -8,9 +8,14 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS usuarios (
                 senha TEXT NOT NULL
                 )""")
 
-cursor.execute("""INSERT INTO usuarios
-                (usuario, senha) VALUES (?, ?)""",
-                ("Ciclano", "ciclaninho"))
+user_procurado = "NIJfaueenej"
+
+cursor.execute("SELECT * FROM usuarios WHERE usuario = ?", (user_procurado,))
+resultado = cursor.fetchone()
+if resultado == None:
+    print(f"O usuário {user_procurado} não existe, por favor, insira valores válidos.")
+else:
+    print(resultado)
 
 conexao.commit()
 conexao.close()
