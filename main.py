@@ -4,7 +4,7 @@ conexao = sqlite3.connect('database.db')
 cursor = conexao.cursor()
 
 def listar_contas():
-    cursor.execute("""SELECT usuario, senha FROM usuarios""")
+    cursor.execute("""SELECT id, usuario, senha FROM usuarios""")
     contas = cursor.fetchall()
     return contas
 
@@ -23,9 +23,11 @@ login_page = tk.Frame(janela, bg=cor_fundo)
 petshop_page = tk.Frame(janela, bg=cor_fundo)
 login_page.pack()
 
-def iniciar_sistema():
+def iniciar_sistema(usuario, usuario_id):
     login_page.pack_forget()
     petshop_page.pack()
+    mensagem_boas_vindas = tk.Label(petshop_page, text=f"Olá {usuario}, seja bem vindo ao nosso petshop!", bg=cor_fundo, fg=cor_texto, font=('Arial', 18, 'bold'))
+    mensagem_boas_vindas.pack(pady=20)
 
 #TELA DO LOGIN#
 tk.Label(login_page, text="Seja bem-vindo ao nosso petshop! Faça login para continuar!", bg=cor_fundo, fg=cor_texto, font=('Arial', 14, 'bold')).pack(pady=50)
@@ -40,9 +42,11 @@ login_message = tk.Label(login_page, text="", bg=cor_fundo, fg=cor_texto, font=(
 def login():
     user = user_entry.get()
     senha = senha_entry.get()
-    if (user, senha) in listar_contas():
-        login_message['text'] = "Acesso liberado."
-        iniciar_sistema()
+    for id_db, user_db, senha_db in listar_contas():
+        if user == user_db and senha == senha_db:
+            login_message['text'] = "Aceso liberado."
+            iniciar_sistema(user, id_db)
+            break
     else:
         login_message['text'] = "Acesso negado, credenciais inválidas."
         user_entry.delete(0, tk.END)
@@ -54,6 +58,6 @@ botao_login.pack(pady=30)
 login_message.pack()
 
 #TELA DO SISTEMA(AINDA VOU CODAR)#
-tk.Label(petshop_page, text=f"Olá, seja bem vindo ao nosso petshop!", bg=cor_fundo, fg=cor_texto, font=('Arial', 20, 'bold')).pack(pady=20)
+
 
 janela.mainloop()
