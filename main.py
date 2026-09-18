@@ -3,7 +3,10 @@ import sqlite3
 conexao = sqlite3.connect('database.db')
 cursor = conexao.cursor()
 
-contas = []
+def listar_contas():
+    cursor.execute("""SELECT usuario, senha FROM usuarios""")
+    contas = cursor.fetchall()
+    return contas
 
 cor_fundo = "#00B9B0"
 cor_texto = "#FFFFFF"
@@ -20,6 +23,11 @@ login_page = tk.Frame(janela, bg=cor_fundo)
 petshop_page = tk.Frame(janela, bg=cor_fundo)
 login_page.pack()
 
+def iniciar_sistema():
+    login_page.pack_forget()
+    petshop_page.pack()
+
+#TELA DO LOGIN#
 tk.Label(login_page, text="Seja bem-vindo ao nosso petshop! Faça login para continuar!", bg=cor_fundo, fg=cor_texto, font=('Arial', 14, 'bold')).pack(pady=50)
 tk.Label(login_page, text="Usuário:", bg=cor_fundo, fg=cor_texto, font=('Arial', 12, 'bold')).pack()
 user_entry = tk.Entry(login_page, bg=cor_campos, fg=cor_texto_campos, font=('Arial', 16))
@@ -28,9 +36,24 @@ tk.Label(login_page, text="Senha:", bg=cor_fundo, fg=cor_texto, font=('Arial', 1
 senha_entry = tk.Entry(login_page, bg=cor_campos, fg=cor_texto_campos, font=('Arial', 16))
 senha_entry.pack(pady=10)
 
+login_message = tk.Label(login_page, text="", bg=cor_fundo, fg=cor_texto, font=('Arial', 14, 'bold'))
+def login():
+    user = user_entry.get()
+    senha = senha_entry.get()
+    if (user, senha) in listar_contas():
+        login_message['text'] = "Acesso liberado."
+        iniciar_sistema()
+    else:
+        login_message['text'] = "Acesso negado, credenciais inválidas."
+        user_entry.delete(0, tk.END)
+        senha_entry.delete(0, tk.END)
 
 
-botao_login = tk.Button(login_page, text="Login", bg=cor_botao, fg=cor_texto, font=('Arial', 15, 'bold'))
+botao_login = tk.Button(login_page, text="Login", command=lambda:login(), bg=cor_botao, fg=cor_texto, font=('Arial', 15, 'bold'))
 botao_login.pack(pady=30)
+login_message.pack()
+
+#TELA DO SISTEMA(AINDA VOU CODAR)#
+tk.Label(petshop_page, text=f"Olá, seja bem vindo ao nosso petshop!", bg=cor_fundo, fg=cor_texto, font=('Arial', 20, 'bold')).pack(pady=20)
 
 janela.mainloop()
