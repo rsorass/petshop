@@ -29,6 +29,24 @@ def iniciar_sistema(usuario, usuario_id):
     mensagem_boas_vindas = tk.Label(petshop_page, text=f"Olá {usuario}, seja bem vindo ao nosso petshop!", bg=cor_fundo, fg=cor_texto, font=('Arial', 18, 'bold'))
     mensagem_boas_vindas.pack(pady=20)
 
+    tk.Label(petshop_page, text="Digite o nome do seu pet:", bg=cor_fundo, fg=cor_texto, font=('Arial', 16, 'bold')).pack()
+    pet_nome_entry = tk.Entry(petshop_page, bg=cor_campos, fg=cor_texto_campos, font=('Arial', 16, 'bold'))
+    pet_nome_entry.pack(pady=15)
+    tk.Label(petshop_page, text="Idade do animal(Digite a idade em meses):", bg=cor_fundo, fg=cor_texto, font=('Arial', 16, 'bold')).pack()
+    idade_pet_entry = tk.Entry(petshop_page, bg=cor_campos, fg=cor_texto_campos, font=('Arial', 16, 'bold'))
+    idade_pet_entry.pack(pady=15)
+
+    def salvar_pet():
+        pet_nome = pet_nome_entry.get()
+        idade_pet = idade_pet_entry.get()
+        if pet_nome.isalpha() and idade_pet.isdigit():
+            cursor.execute("""INSERT INTO pets
+                        (nome, idade_meses, dono_id) VALUES
+                        (?, ?, ?)""", (pet_nome, idade_pet, usuario_id))
+            conexao.commit()
+    botao_add_pet = tk.Button(petshop_page, text="Adicionar pet aos seus pets", command=salvar_pet, bg=cor_botao, fg=cor_texto, font=('Arial', 16, 'bold'))
+    botao_add_pet.pack(pady=15)
+
 #TELA DO LOGIN#
 tk.Label(login_page, text="Seja bem-vindo ao nosso petshop! Faça login para continuar!", bg=cor_fundo, fg=cor_texto, font=('Arial', 14, 'bold')).pack(pady=50)
 tk.Label(login_page, text="Usuário:", bg=cor_fundo, fg=cor_texto, font=('Arial', 12, 'bold')).pack()
