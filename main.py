@@ -1,19 +1,25 @@
 import tkinter as tk
 from tkinter import ttk
+import io
 from PIL import ImageTk, Image
-from requests import *
-import sqlite3
-conexao = sqlite3.connect('database.db')
-cursor = conexao.cursor()
+from datactrl import buscar_produtos, listar_contas, listar_pets, cadastrar_pet_banco
+import requests
 
-def listar_contas():
-    cursor.execute("""SELECT id, usuario, senha FROM usuarios""")
-    contas = cursor.fetchall()
-    return contas
+def carregar_imagem_url(url):
+    try:
+        resposta = requests.get(url, timeout=5)
 
-def listar_pets(dono_id):
-    cursor.execute("""SELECT nome, idade_meses FROM pets WHERE dono_id = ?""", (dono_id,))
-    return cursor.fetchall()
+        arquivo_virtual = io.BytesIO(resposta.content)
+
+        imagem_pil = Image.open(arquivo_virtual)
+        imagem_redimensionada = imagem_pil.resize((150, 150))
+
+        imagem_final = ImageTk.PhotoImage(imagem_redimensionada)
+
+        return imagem_final
+    except Exception as erro:
+        print(f"Erro ao carregar a imagem: {erro}")
+        return None
 
 def criar_page_com_scroll(parent_frame):
     aba_frame = tk.Frame(parent_frame, bg=cor_fundo)
@@ -150,7 +156,7 @@ botao_cadastrar_pets = tk.Button(barra_inferior, command=lambda:cadastro_pet_pag
 botao_cadastrar_pets.pack(side='left', fill='both', expand=True)
 #FIM#
 
-pet_cadastro_label = tk.Label(sub_pets, text="", bg=cor_fundo, fg=cor_texto, font=('Arial', 12, 'bold'))
+pet_cadastro_label = tk.Label(sub_cadastro_pets, text="", bg=cor_fundo, fg=cor_texto, font=('Arial', 12, 'bold'))
 
 def iniciar_sistema(usuario, usuario_id):
     login_page.pack_forget()
@@ -169,7 +175,7 @@ def iniciar_sistema(usuario, usuario_id):
 
     tabela_pets = ttk.Treeview(sub_pets, columns=("nome", "idade"), show="headings")
     tabela_pets.heading("nome", text="Nome do Pet")
-    tabela_pets.heading("idade", text="Idade do Pet")
+    tabela_pets.heading("idade", text="Idade do Pet em Meses")
 
     tabela_pets.column("nome", width=300, anchor="center")
     tabela_pets.column("idade", width=200, anchor="center")
@@ -183,24 +189,25 @@ def iniciar_sistema(usuario, usuario_id):
     idade_pet_entry = tk.Entry(sub_cadastro_pets, bg=cor_campos, fg=cor_texto_campos, font=('Arial', 16, 'bold'))
     idade_pet_entry.pack(pady=15)
 
-    
-
-    for pet in meus_pets:
-        tabela_pets.insert("", "end", values=(pet[0], pet[1]))
-
     def salvar_pet():
         pet_cadastro_label.pack()
         pet_nome = pet_nome_entry.get()
-        idade_pet = idade_pet_entry.get()
+        pet_idade = idade_pet_entry.get()
 
-        if pet_nome.replace(" ", "").isalpha() and idade_pet.isdigit():
-            cursor.execute("""INSERT INTO pets
-                        (nome, idade_meses, dono_id) VALUES
-                        (?, ?, ?)""", (pet_nome, idade_pet, usuario_id))
-            conexao.commit()
-            pet_cadastro_label['text'] = "Pet cadastrado com sucesso!"
+        if pet_nome.replace(" ", "").isalpha() and pet_idade.isdigit():
+            sucesso = cadastrar_pet_banco(pet_nome, pet_idade, usuario_id)
+
+            if sucesso:
+                pet_cadastro_label['text'] = "Pet cadastrado com sucesso!"
+
+                tabela_pets.insert("", "end", values=(pet_nome, pet_idade))
+            else:
+                pet_cadastro_label['text'] = "Houve um erro na hora de salvar no banco de dados."
         else:
-            pet_cadastro_label['text'] = "Houve um erro na hora de cadastrar seu pet, digite apenas letras para o nome e números para a idade."
+            pet_cadastro_label['text'] = "Houve um erro na hora de cadastrar. Use apenas letras para o nome e números para a idade."
+
+    for pet in meus_pets:
+        tabela_pets.insert("", "end", values=(pet[0], pet[1]))
 
     botao_add_pet = tk.Button(sub_cadastro_pets, text="Adicionar pet aos seus pets", command=salvar_pet, bg=cor_botao, fg=cor_texto, font=('Arial', 16, 'bold'))
     botao_add_pet.pack(pady=15)

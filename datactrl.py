@@ -67,9 +67,33 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS historico (
                 FOREIGN KEY (cliente_id) REFERENCES usuarios(id)
 )""")
 
-cursor.execute("""INSERT INTO comidas
-                (comida, imagem_url, preço) VALUES
-                ("Ração Premium Para Cachorro Adulto", "https://images.unsplash.com/photo-1684882726821-2999db517441?q=80&w=300", 89.90)""")
+def buscar_produtos(tabela):
+    cursor.execute(f"""SELECT * FROM {tabela}""")
+    tabela_produtos = cursor.fetchall()
+    print("\n Produtos: ")
+    print(f"\n{tabela_produtos}\n")
+
+buscar_produtos("comidas")
+
+def listar_contas():
+    cursor.execute("""SELECT id, usuario, senha FROM usuarios""")
+    contas = cursor.fetchall()
+    return contas
+
+def listar_pets(dono_id):
+    cursor.execute("""SELECT nome, idade_meses FROM pets WHERE dono_id = ?""", (dono_id,))
+    return cursor.fetchall()
+
+def cadastrar_pet_banco(nome, idade, dono_id):
+    try:
+        cursor.execute("""INSERT INTO pets
+                        (nome, idade_meses, dono_id) VALUES
+                        (?, ?, ?)""", (nome, idade, dono_id))
+        conexao.commit()
+        return True
+    except Exception as e:
+        print(f"Erro no banco: {e}")
+        return False
 
 user_procurado = None
 cursor.execute("SELECT * FROM usuarios WHERE usuario = ?", (user_procurado,))
@@ -80,4 +104,3 @@ else:
     print(resultado)
 
 conexao.commit()
-conexao.close()
