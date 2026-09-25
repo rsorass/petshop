@@ -1,4 +1,7 @@
 import sqlite3
+import io
+import requests
+from PIL import Image, ImageTk
 conexao = sqlite3.connect('database.db')
 cursor = conexao.cursor()
 
@@ -20,60 +23,127 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS pets (
                 )""")
 
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS comidas (
+cursor.execute("""CREATE TABLE IF NOT EXISTS table_comidas (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                comida TEXT NOT NULL,
+                nome TEXT NOT NULL,
                 imagem_url TEXT,
+                tabela_origem TEXT NOT NULL,
                 preço FLOAT NOT NULL
 )""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS brinquedos (
+cursor.execute("""CREATE TABLE IF NOT EXISTS table_brinquedos (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                brinquedo TEXT NOT NULL,
+                nome TEXT NOT NULL,
                 imagem_url TEXT,
+                tabela_origem TEXT NOT NULL,
                 preço FLOAT NOT NULL
 )""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS casinhas (
+cursor.execute("""CREATE TABLE IF NOT EXISTS table_casinhas (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                casinha TEXT NOT NULL,
+                nome TEXT NOT NULL,
                 imagem_url TEXT,
+                tabela_origem TEXT NOT NULL,
                 preço FLOAT NOT NULL
 )""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS utilitarios (
+cursor.execute("""CREATE TABLE IF NOT EXISTS table_utilitarios (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                utilitario TEXT NOT NULL,
+                nome TEXT NOT NULL,
                 imagem_url TEXT,
+                tabela_origem TEXT NOT NULL,
                 preço FLOAT NOT NULL
 )""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS serviços (
+cursor.execute("""CREATE TABLE IF NOT EXISTS table_serviços (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                serviço TEXT NOT NULL,
+                nome TEXT NOT NULL,
                 imagem_url TEXT,
                 preço FLOAT NOT NULL,
+                tabela_origem TEXT NOT NULL,
                 data TEXT NOT NULL
 )""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS historico (
+cursor.execute("""CREATE TABLE IF NOT EXISTS table_historico (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                produto_ou_serviço TEXT NOT NULL,
-                imagem_url TEXT,
-                preço FLOAT NOT NULL,
+                nome TEXT NOT NULL,
+                imagem_url TEXT NOT NULL,
+                quantidade INTEGER NOT NULL,
+                valor_total FLOAT NOT NULL,
+                tabela_origem TEXT NOT NULL,
                 data TEXT NOT NULL,
+
 
                 cliente_id INTEGER,
                 FOREIGN KEY (cliente_id) REFERENCES usuarios(id)
 )""")
 
-def buscar_produtos(tabela):
-    cursor.execute(f"""SELECT * FROM {tabela}""")
-    tabela_produtos = cursor.fetchall()
-    print("\n Produtos: ")
-    print(f"\n{tabela_produtos}\n")
+def carregar_imagem_url(url):
+    try:
 
-buscar_produtos("comidas")
+        if url and "://pinimg.com" in url:
+            if "/originals/" in url: url = url.replace("/originals/", "/236x/")
+            elif "/736x/" in url: url = url.replace("/736x/", "/236x/")
+        resposta = requests.get(url, timeout=5)
+        resposta.raise_for_status()
+        with io.BytesIO(resposta.content) as arquivo_virtual:
+            with Image.open(arquivo_virtual) as imagem_pil:
+                imagem_redimensionada = imagem_pil.resize((150, 150), Image.Resampling.LANCZOS)
+                imagem_final = ImageTk.PhotoImage(imagem_redimensionada)
+                imagem_final.image = imagem_final
+                return imagem_final
+
+    except Exception as erro:
+        print(f"Erro ao carregar imagem: {erro}")
+        return None
+
+# tabelas_para_deletar = ['comidas', 'brinquedos', 'serviços', 'casinhas', 'utilitarios', 'historico']
+# for tabela in tabelas_para_deletar:
+#      comando = f"""DROP TABLE IF EXISTS {tabela}"""
+#      cursor.execute(comando)
+#      print(f"Tabela {tabela} deletada(se existia).")
+
+def buscar_produtos(nome_pesquisado):
+    query = """
+    SELECT id, nome, imagem_url, tabela_origem, preço FROM comidas WHERE nome LIKE ? UNION ALL
+    SELECT id, nome, imagem_url, tabela_origem, preço FROM brinquedos WHERE nome LIKE ? UNION ALL
+    SELECT id, nome, imagem_url, tabela_origem, preço FROM casinhas WHERE nome LIKE ? UNION ALL
+    SELECT id, nome, imagem_url, tabela_origem, preço FROM utilitarios WHERE nome LIKE ?
+    """
+
+    termo = f"%{nome_pesquisado}%"
+
+    cursor.execute(query, (termo, termo, termo, termo))
+    resultados = cursor.fetchall()
+
+    produtos_formatados = []
+    for linha in resultados:
+        id_prod, nome, url_imagem, tabela, preco = linha
+        imagem_tkinter = carregar_imagem_url(url_imagem)
+
+        produtos_formatados.append({
+            "id": id_prod,
+            "nome": nome,
+            "preco": preco,
+            "tabela": tabela,
+            "foto": imagem_tkinter
+        })
+
+    return produtos_formatados
+
+def fechar_banco():
+    """FUNÇÃO PARA SER USADA NO BANCO !APENAS! QUANDO O USUÁRIO FECHAR O SISTEMA"""
+    conexao.close()
+try:
+     cursor.execute("""
+                 INSERT INTO table_comidas
+                 (nome, imagem_url, tabela_origem, preço) VALUES
+                 ("Ração para Cachorros Filhotes", "https://i.pinimg.com/1200x/cc/5d/27/cc5d2725c40cba7afc4c768a19488452.jpg?w=300", "comidas", 89.90)
+                 """)
+     conexao.commit()
+     print("Suceso ao inserir dados ao data base!")
+except Exception as erro:
+     print(f"\nHouve um erro ao inserir algo no banco de dados: {erro}\n")
 
 def listar_contas():
     cursor.execute("""SELECT id, usuario, senha FROM usuarios""")
