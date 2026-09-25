@@ -1,25 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-import io
-from PIL import ImageTk, Image
-from datactrl import buscar_produtos, listar_contas, listar_pets, cadastrar_pet_banco
-import requests
-
-def carregar_imagem_url(url):
-    try:
-        resposta = requests.get(url, timeout=5)
-
-        arquivo_virtual = io.BytesIO(resposta.content)
-
-        imagem_pil = Image.open(arquivo_virtual)
-        imagem_redimensionada = imagem_pil.resize((150, 150))
-
-        imagem_final = ImageTk.PhotoImage(imagem_redimensionada)
-
-        return imagem_final
-    except Exception as erro:
-        print(f"Erro ao carregar a imagem: {erro}")
-        return None
+from datactrl import listar_contas, listar_pets, buscar_produtos, carregar_imagem_url, cadastrar_pet_banco, fechar_banco
 
 def criar_page_com_scroll(parent_frame):
     aba_frame = tk.Frame(parent_frame, bg=cor_fundo)
@@ -235,7 +216,6 @@ def login():
         login_message['text'] = "Acesso negado, credenciais inválidas."
         user_entry.delete(0, tk.END)
         senha_entry.delete(0, tk.END)
-
 
 botao_login = tk.Button(login_page, text="Login", command=lambda:login(), bg=cor_botao, fg=cor_texto, font=('Arial', 18, 'bold'))
 botao_login.pack(pady=30)
